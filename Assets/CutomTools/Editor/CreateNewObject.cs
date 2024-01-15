@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEditor;
 using Codice.Utils;
 using UnityEngine.UI;
+using System.ComponentModel;
+using System.IO;
+using System;
 
 namespace com.editor.customuicreator
 {
@@ -17,6 +20,9 @@ namespace com.editor.customuicreator
         private Vector3 m_ElementRotation;
         private GameObject m_Parent;
         private List<UIObject> m_Elements;
+        private string m_ParentObjectName;
+        private string m_ObjectType;
+
         private bool showEmptyGameObjectPropsCalled = false;
         CreateTemplateWindow templateWindow;
 
@@ -126,6 +132,7 @@ namespace com.editor.customuicreator
         {
             if (m_CreatedGameobject != null)
             {
+                m_ObjectType = "Empty";
                 CommonGameObjectProps();
                 Buttons();
             }
@@ -154,6 +161,7 @@ namespace com.editor.customuicreator
                         Sprite sprite = Sprite.Create(selectedImage, new Rect(0, 0, selectedImage.width, selectedImage.height), Vector2.one * 0.5f);
                             // Assign the sprite to the Image component
                         m_CreatedGameobject.GetComponent<Image>().sprite = sprite;
+                        m_ObjectType = "Image";
                 }
 
                 if (GUILayout.Button("Select Image"))
@@ -204,6 +212,7 @@ namespace com.editor.customuicreator
                     if (m_Parent != null)
                     {
                         m_CreatedGameobject.transform.parent = m_Parent.transform;
+
                     }
                     if (newobject == null)
                     {
@@ -216,6 +225,9 @@ namespace com.editor.customuicreator
                     newobject._ObjectScale = m_ElementScale;
                     newobject._Parent = m_Parent;
                     newobject._Image = selectedImage;
+                    newobject._ParentObjectName = m_Parent.transform.name;
+                    newobject._ObjectType = m_ObjectType;
+                    newobject._ImagePath = selectedImagePath;
 
                     if (m_Elements.Contains(newobject) == false)
                     {
@@ -284,12 +296,27 @@ namespace com.editor.customuicreator
             string imagePath = EditorUtility.OpenFilePanel("Select Image", "", "png,jpg,jpeg,gif");
             if (!string.IsNullOrEmpty(imagePath))
             {
-                string relativeImagePath = "Assets" + imagePath.Substring(Application.dataPath.Length);
+                // Load the texture
 
-                selectedImagePath = relativeImagePath;
+                string fileName = Path.GetFileName(imagePath);
+                string destinationPath = "Assets/Sprites/" + fileName;
+                try
+                {
+                    // Check if the file already exists
+                    if (!File.Exists(destinationPath))
+                    {
+                        FileUtil.CopyFileOrDirectory(imagePath, destinationPath);
+                    }
+                    AssetDatabase.Refresh();
+                    selectedImagePath = destinationPath;
+                    selectedImage = LoadTexture(selectedImagePath);
+                    Repaint();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("Error copying image: " + e.Message);
+                }
 
-                selectedImage = LoadTexture(imagePath);
-                Repaint();
             }
         }
         //to load Texture

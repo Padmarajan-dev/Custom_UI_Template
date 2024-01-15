@@ -31,6 +31,8 @@ namespace com.editor.customuicreator
 
             _templates = saveTemplate.LoadTemplateData();
 
+            Debug.Log("Templates count: "+_templates.Count);
+
             if (_templates !=null && _templates.Count > 0)
             {
                 GUILayout.BeginScrollView(new Vector2(0, 0), GUILayout.Width(200));
@@ -49,7 +51,7 @@ namespace com.editor.customuicreator
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("Load"))
                     {
-
+                        saveTemplate.LoadHierarchyFromJson();
                     }
                     if (GUILayout.Button("Edit"))
                     {

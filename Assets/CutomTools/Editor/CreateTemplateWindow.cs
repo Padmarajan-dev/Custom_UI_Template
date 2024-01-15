@@ -4,6 +4,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using System.ComponentModel;
 using System.Collections.Generic;
+using System.IO;
+using System;
 
 namespace com.editor.customuicreator
 {
@@ -155,12 +157,27 @@ namespace com.editor.customuicreator
             string imagePath = EditorUtility.OpenFilePanel("Select Image", "", "png,jpg,jpeg,gif");
             if (!string.IsNullOrEmpty(imagePath))
             {
-                string relativeImagePath = "Assets" + imagePath.Substring(Application.dataPath.Length);
+                // Load the texture
 
-                selectedImagePath = relativeImagePath;
+                string fileName = Path.GetFileName(imagePath);
+                string destinationPath = "Assets/Sprites/" + fileName;
+                try
+                {
+                    // Check if the file already exists
+                    if (!File.Exists(destinationPath))
+                    {
+                        FileUtil.CopyFileOrDirectory(imagePath, destinationPath);
+                    }
+                    AssetDatabase.Refresh();
+                    selectedImagePath = destinationPath;
+                    image = LoadTexture(selectedImagePath);
+                    Repaint();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("Error copying image: " + e.Message);
+                }
 
-                image = LoadTexture(imagePath);
-                Repaint();
             }
         }
 

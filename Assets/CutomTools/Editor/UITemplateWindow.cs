@@ -31,7 +31,6 @@ namespace com.editor.customuicreator
 
             _templates = saveTemplate.LoadTemplateData();
 
-            Debug.Log("Templates count: "+_templates.Count);
 
             if (_templates !=null && _templates.Count > 0)
             {
@@ -51,7 +50,8 @@ namespace com.editor.customuicreator
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("Load"))
                     {
-                        saveTemplate.LoadHierarchyFromJson();
+                        InitializeCanvas();
+                        saveTemplate.LoadHierarchyFromJson(template._UIObjects);
                     }
                     if (GUILayout.Button("Edit"))
                     {

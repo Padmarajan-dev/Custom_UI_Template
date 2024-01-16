@@ -5,7 +5,11 @@ using System.Collections.Generic;
 using System.IO;
 using Unity.Plastic.Newtonsoft.Json;
 using Unity.Plastic.Newtonsoft.Json.Linq;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
 namespace com.editor.customuicreator
 {
     [System.Serializable]
@@ -17,14 +21,17 @@ namespace com.editor.customuicreator
 
         JsonSerializerSettings settings = new JsonSerializerSettings
         {
-            Converters = new List<JsonConverter> { new Vector3Converter(), new GameObjectConverter() }
+            Converters = new List<JsonConverter> { new Vector3Converter(), new ColorConverter(),new Vector2Converter() }
         };
+        private GameObject canvasObject;
+
         public void SaveTemplateData(List<Template> templatedata)
         {
             string path = m_JsonDataPath + "/TemplatesData.json";
             string jsondata = JsonConvert.SerializeObject(templatedata,settings);
 
             File.WriteAllText(path, jsondata);
+            
 
         }
 
@@ -46,30 +53,7 @@ namespace com.editor.customuicreator
 
         }
 
-        //to save UI Objects Data
-        public void SaveUIObjectsData(List<UIObject> UIObjects)
-        {
-            string path = m_JsonDataPath + "/UIObjectsData.json";
-            string jsondata = JsonConvert.SerializeObject(UIObjects);
 
-            File.WriteAllText(path, jsondata);
-        }
-
-        public List<UIObject> LoadUIObjectsData()
-        {
-            string path = m_JsonDataPath + "/TemplatesData.json";
-            try
-            {
-                string jsondata = System.IO.File.ReadAllText(path);
-                List<UIObject> templates = JsonConvert.DeserializeObject<List<UIObject>>(jsondata,settings);
-                return templates;
-            }
-            catch (Exception e)
-            {
-                return new List<UIObject>(); // Return an empty list or handle the error accordingly
-            }
-
-        }
         #region Custom Converters
         public class Vector3Converter : JsonConverter
         {
@@ -101,25 +85,25 @@ namespace com.editor.customuicreator
             }
         }
 
-        public class GameObjectConverter : JsonConverter
-        {
-            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-            {
-                GameObject gameObject = (GameObject)value;
-                writer.WriteValue(gameObject.name);
-            }
+        //public class GameObjectConverter : JsonConverter
+        //{
+        //    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        //    {
+        //        GameObject gameObject = (GameObject)value;
+        //        writer.WriteValue(gameObject.name);
+        //    }
 
-            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-            {
-                string gameObjectName = (string)reader.Value;
-                return GameObject.Find(gameObjectName);
-            }
+        //    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        //    {
+        //        string gameObjectName = (string)reader.Value;
+        //        return GameObject.Find(gameObjectName);
+        //    }
 
-            public override bool CanConvert(Type objectType)
-            {
-                return objectType == typeof(GameObject);
-            }
-        }
+        //    public override bool CanConvert(Type objectType)
+        //    {
+        //        return objectType == typeof(GameObject);
+        //    }
+        //}
 
         public class ColorConverter : JsonConverter
         {
@@ -209,44 +193,74 @@ namespace com.editor.customuicreator
         #endregion
 
         #region to load gameobjects in hierarchy through json data
-        public void LoadHierarchyFromJson()
+        public void LoadHierarchyFromJson(List<UIObject> uiobject)
         {
-            try
+            if(uiobject.Count > 0)
             {
-                // Deserialize JSON data
-                List<UIObject> rootData = LoadUIObjectsData();
-                Debug.Log(rootData[0]);
-                // Clear existing hierarchy
-                //if (rootGameObject != null)
-                //{
-                //    DestroyImmediate(rootGameObject);
-                //}
-
-                // Create new hierarchy
-                foreach (UIObject rootObject in rootData)
+                foreach(UIObject obj in uiobject)
                 {
-                    rootGameObject = CreateGameObject(rootObject);
+                    CreateGameObject(obj);
                 }
-                
-            }
-            catch (Exception e)
-            {
-                Debug.LogError("Error loading hierarchy from JSON: " + e.Message);
             }
         }
 
+
+
+  
         private GameObject CreateGameObject(UIObject data)
         {
-            GameObject newObject = new GameObject(data._ObjectName);
+            GameObject newObject = data._Object != null ? data._Object : new GameObject(data._ObjectName);
 
-            if (data._Parent != null)
-            {
-                newObject.transform.parent = data._Parent.transform;
-            }
-            
+            //if (data._Parent != null)
+            //{
+            //    newObject.transform.parent = data._Parent.transform;
+            //}
+
+
+
             newObject.transform.localPosition = data._ObjectPosition;
             newObject.transform.localEulerAngles = data._ObjectRotation;
             newObject.transform.localScale = data._ObjectScale;
+
+            if (data._ObjectType == "Image")
+            {
+
+                if (!string.IsNullOrEmpty(data._ImagePath))
+                {
+
+                    // Load the sprite from Resources based on the ImagePath
+                    Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(data._ImagePath);
+
+                    // Check if the sprite is not null before assigning
+                    if (sprite != null)
+                    {
+                        // Get the Image component and assign the sprite
+                        Image imageComponent = newObject.GetComponent<Image>();
+                        if (imageComponent != null)
+                        {
+                            imageComponent.sprite = sprite;
+                        }
+                        else
+                        {
+                            newObject.AddComponent<Image>();
+                            newObject.GetComponent<Image>().sprite = sprite;
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Sprite not found at path: " + data._ImagePath);
+                    }
+                }
+            }
+            if (data._ParentObjectName != null)
+            {
+                GameObject parent = CreateTemplateWindow.FindObject(data._ParentObjectName);
+
+                if (parent != null)
+                {
+                    newObject.transform.parent = parent.transform;
+                }
+            }
 
             return newObject;
         }
@@ -266,7 +280,7 @@ namespace com.editor.customuicreator
     public class UIObject
     {
 
-        public GameObject _Object;
+        [JsonIgnore] public GameObject _Object;
         public string _ObjectName;
         public Vector3 _ObjectPosition;
         public Vector3 _ObjectScale;
@@ -275,7 +289,7 @@ namespace com.editor.customuicreator
         public string _ImagePath;
         //public Color _ObjectColor;
         //public Color _TextColor;
-        public GameObject _Parent;
+        [JsonIgnore] public GameObject _Parent;
         public string _ParentObjectName;
         public string _ObjectType;
     }

@@ -19,7 +19,7 @@ namespace com.editor.customuicreator
         private Vector3 m_ElementScale;
         private Vector3 m_ElementRotation;
         private GameObject m_Parent;
-        private List<UIObject> m_Elements;
+        //private List<UIObject> templateWindow.newTemplate._UIObjects;
         private string m_ParentObjectName;
         private string m_ObjectType;
 
@@ -101,7 +101,7 @@ namespace com.editor.customuicreator
             m_CreatedGameobject = null;
             m_ElementName = string.Empty;
             m_ElementPosition = Vector3.zero;
-            m_ElementScale = Vector3.one;
+            m_ElementScale = new Vector3(0.5f, 0.5f, 0.5f);
             m_Parent = null;
             newobject = null;
         }
@@ -214,30 +214,11 @@ namespace com.editor.customuicreator
                         m_CreatedGameobject.transform.parent = m_Parent.transform;
 
                     }
-                    if (newobject == null)
-                    {
-                        newobject = new UIObject();
-                    }
-                    newobject._Object = m_CreatedGameobject;
-                    newobject._ObjectName = m_ElementName;
-                    newobject._ObjectPosition = m_ElementPosition;
-                    newobject._ObjectRotation = m_ElementRotation;
-                    newobject._ObjectScale = m_ElementScale;
-                    newobject._Parent = m_Parent;
-                    newobject._Image = selectedImage;
-                    newobject._ParentObjectName = m_Parent.transform.name;
-                    newobject._ObjectType = m_ObjectType;
-                    newobject._ImagePath = selectedImagePath;
-
-                    if (m_Elements.Contains(newobject) == false)
-                    {
-                        m_Elements.Add(newobject);
-                    }
                     else
                     {
-                        m_Elements.Remove(newobject);
-                        m_Elements.Add(newobject);
+                        m_Parent = EditorGUILayout.ObjectField("My GameObject Field",FindObjectOfType<Canvas>(), typeof(GameObject), true) as GameObject;
                     }
+
                 }
             }
         }
@@ -247,8 +228,32 @@ namespace com.editor.customuicreator
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Add In Template"))
             {
+                if (newobject == null)
+                {
+                    newobject = new UIObject();
+                }
+                newobject._Object = m_CreatedGameobject;
+                newobject._ObjectName = m_ElementName;
+                newobject._ObjectPosition = m_ElementPosition;
+                newobject._ObjectRotation = m_ElementRotation;
+                newobject._ObjectScale = m_ElementScale;
+                newobject._Parent = m_Parent;
+                newobject._Image = selectedImage;
+                newobject._ParentObjectName = m_Parent.transform.name;
+                newobject._ObjectType = m_ObjectType;
+                newobject._ImagePath = selectedImagePath;
 
-                CreateTemplateWindow.newTemplate._UIObjects = m_Elements;
+                if (CreateTemplateWindow.newTemplate._UIObjects.Contains(newobject) == false)
+                {
+                    CreateTemplateWindow.newTemplate._UIObjects.Add(newobject);
+                }
+                else
+                {
+                    CreateTemplateWindow.newTemplate._UIObjects.Remove(newobject);
+                    CreateTemplateWindow.newTemplate._UIObjects.Add(newobject);
+                }
+
+                //CreateTemplateWindow.newTemplate._UIObjects = templateWindow.newTemplate._UIObjects;
                 if (m_CreatedGameobject != null)
                 {
                     //DestroyImmediate(m_CreatedGameobject);
@@ -290,7 +295,7 @@ namespace com.editor.customuicreator
             GUILayout.Label("Parent Object", EditorStyles.boldLabel);
             m_Parent = EditorGUILayout.ObjectField("My GameObject Field", m_Parent, typeof(GameObject), true) as GameObject;
         }
-
+        //to open file explorer
         private void OpenImagePicker()
         {
             string imagePath = EditorUtility.OpenFilePanel("Select Image", "", "png,jpg,jpeg,gif");
@@ -335,10 +340,19 @@ namespace com.editor.customuicreator
         private void OnEnable()
         {
             EditorApplication.hierarchyWindowChanged += OnHierarchyChanged;
-            options = new List<string>() { "empty", "Image", "Button", "TextField"};
-            m_Elements = new List<UIObject>();
+            options = new List<string>() { "empty", "Image", "Button", "Text"};
+            //if (templateWindow.newTemplate._UIObjects == null)
+            //{
+            //    templateWindow.newTemplate._UIObjects = new List<UIObject>();
+            //}
+            //else
+            //{
+            //    Debug.Log("Elements:"+templateWindow.newTemplate._UIObjects.Count);
+            //}
+            
             templateWindow = new CreateTemplateWindow();
             Canvas canvas = FindObjectOfType<Canvas>();
+            m_ElementScale = new Vector3(0.5f, 0.5f, 0.5f);
             // If Canvas is found, use it as the default parent
             GameObject defaultParent = canvas != null ? canvas.gameObject : null;
             // Display a dropdown to select the parent

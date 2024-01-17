@@ -1,12 +1,13 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using Codice.Utils;
 using UnityEngine.UI;
-using System.ComponentModel;
 using System.IO;
 using System;
+using UnityEngine.UIElements;
+using Button = UnityEngine.UI.Button;
+using TMPro;
+
 
 namespace com.editor.customuicreator
 {
@@ -18,7 +19,10 @@ namespace com.editor.customuicreator
         private Vector3 m_ElementPosition;
         private Vector3 m_ElementScale;
         private Vector3 m_ElementRotation;
+        private Color m_ObjectTextColor;
+        private float m_TextSize;
         private GameObject m_Parent;
+        private string m_Text;
         //private List<UIObject> templateWindow.newTemplate._UIObjects;
         private string m_ParentObjectName;
         private string m_ObjectType;
@@ -76,11 +80,16 @@ namespace com.editor.customuicreator
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(options[2]))
             {
-                // Handle button click actions for options[2]
-            }
-            if (GUILayout.Button(options[3]))
-            {
-                // Handle button click actions for options[3]
+                OptionId = 2;
+                if (m_CreatedGameobject != null)
+                {
+                    ResetObject();
+                }
+                else
+                {
+
+                    m_CreatedGameobject = new GameObject(m_ElementName);
+                }
             }
             GUILayout.EndHorizontal();
 
@@ -118,15 +127,14 @@ namespace com.editor.customuicreator
                     ShowImageGameObjectProps(); 
                     break;
                case 2:
-                    ShowButtonGameObjectProps();
-                    break;
-               case 3:
-                    ShowTextFieldGameObjectProps();
+                    ShowTextGameObjectProps();
                     break;
                default: 
                     break;
             }
         }
+
+        #region Object methods
         //empty gameobject
         private void ShowEmptyGameObjectProps()
         {
@@ -139,16 +147,16 @@ namespace com.editor.customuicreator
             EditCreatedObjet();
 
         }
-        #region Object methods
         //image object
         private void ShowImageGameObjectProps()
         {
             if (m_CreatedGameobject != null)
             {
+                m_ObjectType = "Image";
                 CommonGameObjectProps();
-                if (m_CreatedGameobject.GetComponent<Image>() == null)
+                if (m_CreatedGameobject.GetComponent<UnityEngine.UI.Image>() == null)
                 {
-                    m_CreatedGameobject.AddComponent<Image>();
+                    m_CreatedGameobject.AddComponent<UnityEngine.UI.Image>();
                 }
                 
                 GUILayout.Label("Element Image", EditorStyles.boldLabel);
@@ -160,8 +168,7 @@ namespace com.editor.customuicreator
                         // Create a sprite from the loaded texture
                         Sprite sprite = Sprite.Create(selectedImage, new Rect(0, 0, selectedImage.width, selectedImage.height), Vector2.one * 0.5f);
                             // Assign the sprite to the Image component
-                        m_CreatedGameobject.GetComponent<Image>().sprite = sprite;
-                        m_ObjectType = "Image";
+                        m_CreatedGameobject.GetComponent<UnityEngine.UI.Image>().sprite = sprite;
                 }
 
                 if (GUILayout.Button("Select Image"))
@@ -175,23 +182,70 @@ namespace com.editor.customuicreator
 
         }
         //Button Object
-        private void ShowButtonGameObjectProps()
+        //private void ShowButtonGameObjectProps()
+        //{
+        //    if (m_CreatedGameobject != null)
+        //    {
+        //        CommonGameObjectProps();
+        //        if (m_CreatedGameobject.GetComponent<Button>() == null)
+        //        {
+        //            m_CreatedGameobject.AddComponent<Button>();
+        //        }
+        //        if (m_CreatedGameobject.GetComponent<Button>() != null)
+        //        {
+        //            GUILayout.BeginHorizontal();
+        //            GUILayout.Label("Button Color", EditorStyles.boldLabel);
+        //            ColorBlock colors = m_CreatedGameobject.GetComponent<Button>().colors;
+        //            m_ObjectColor = EditorGUILayout.ColorField(m_ObjectColor);
+        //            colors.highlightedColor = m_ObjectColor;
+        //            GUILayout.EndHorizontal();
+        //            GUILayout.BeginHorizontal();
+        //            GUILayout.Label("Button Text Color", EditorStyles.boldLabel);
+        //            m_ObjectTextColor = EditorGUILayout.ColorField(m_ObjectTextColor);
+        //            GUILayout.EndHorizontal();
+        //            GUILayout.Label("Button Text Size", EditorStyles.boldLabel);
+        //            m_TextSize = EditorGUILayout.FloatField(m_TextSize);
+        //            GUILayout.EndHorizontal();
+        //        }
+        //        Buttons();
+        //    }
+        //    EditCreatedObjet();
+
+        //}
+
+        //text Object
+        private void ShowTextGameObjectProps()
         {
             if (m_CreatedGameobject != null)
             {
+                m_ObjectType = "Text";
                 CommonGameObjectProps();
-                Buttons();
-            }
-            EditCreatedObjet();
+                TextMeshProUGUI textMeshPro = m_CreatedGameobject.GetComponent<TextMeshProUGUI>();
 
-        }
+                if (textMeshPro == null)
+                {
+                    // Add the TextMeshProUGUI component
+                    m_CreatedGameobject.AddComponent<TextMeshProUGUI>();
+                    textMeshPro = m_CreatedGameobject.GetComponent<TextMeshProUGUI>();
+                    // Set some default values or configurations if needed
+                    textMeshPro.text = "Default Text";
+                    textMeshPro.color = Color.white; // Set a default color
+                    textMeshPro.fontSize = 12; // Set a default font size
+                }
 
-        //textfield Object
-        private void ShowTextFieldGameObjectProps()
-        {
-            if (m_CreatedGameobject != null)
-            {
-                CommonGameObjectProps();
+                // Now, you can modify the TextMeshProUGUI component
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Text Color", EditorStyles.boldLabel);
+                m_ObjectTextColor = EditorGUILayout.ColorField(textMeshPro.color);
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Text Size", EditorStyles.boldLabel);
+                m_TextSize = EditorGUILayout.FloatField(textMeshPro.fontSize);
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Text", EditorStyles.boldLabel);
+                m_Text = EditorGUILayout.TextField(textMeshPro.text);
+                GUILayout.EndHorizontal();
                 Buttons();
             }
             EditCreatedObjet();
@@ -214,11 +268,14 @@ namespace com.editor.customuicreator
                         m_CreatedGameobject.transform.parent = m_Parent.transform;
 
                     }
-                    else
-                    {
-                        m_Parent = EditorGUILayout.ObjectField("My GameObject Field",FindObjectOfType<Canvas>(), typeof(GameObject), true) as GameObject;
-                    }
 
+                    if (m_CreatedGameobject.GetComponent<TextMeshProUGUI>() != null)
+                    {
+                        m_CreatedGameobject.GetComponent<TextMeshProUGUI>().color = m_ObjectTextColor;
+                        m_CreatedGameobject.GetComponent<TextMeshProUGUI>().fontSize = (int) m_TextSize;
+                        m_CreatedGameobject.GetComponent<TextMeshProUGUI>().text = m_Text;
+
+                    }
                 }
             }
         }
@@ -242,6 +299,9 @@ namespace com.editor.customuicreator
                 newobject._ParentObjectName = m_Parent.transform.name;
                 newobject._ObjectType = m_ObjectType;
                 newobject._ImagePath = selectedImagePath;
+                newobject._TextColor = m_ObjectTextColor;
+                newobject._TextSize = m_TextSize;
+                newobject._Text = m_Text;
 
                 if (CreateTemplateWindow.newTemplate._UIObjects.Contains(newobject) == false)
                 {
@@ -294,6 +354,7 @@ namespace com.editor.customuicreator
             GUILayout.EndHorizontal();
             GUILayout.Label("Parent Object", EditorStyles.boldLabel);
             m_Parent = EditorGUILayout.ObjectField("My GameObject Field", m_Parent, typeof(GameObject), true) as GameObject;
+
         }
         //to open file explorer
         private void OpenImagePicker()
@@ -340,15 +401,7 @@ namespace com.editor.customuicreator
         private void OnEnable()
         {
             EditorApplication.hierarchyWindowChanged += OnHierarchyChanged;
-            options = new List<string>() { "empty", "Image", "Button", "Text"};
-            //if (templateWindow.newTemplate._UIObjects == null)
-            //{
-            //    templateWindow.newTemplate._UIObjects = new List<UIObject>();
-            //}
-            //else
-            //{
-            //    Debug.Log("Elements:"+templateWindow.newTemplate._UIObjects.Count);
-            //}
+            options = new List<string>() { "empty", "Image","Text"};
             
             templateWindow = new CreateTemplateWindow();
             Canvas canvas = FindObjectOfType<Canvas>();

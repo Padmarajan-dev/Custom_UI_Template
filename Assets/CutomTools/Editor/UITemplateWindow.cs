@@ -13,6 +13,9 @@ namespace com.editor.customuicreator
     {
         List<Template> _templates;
         public GameObject canvasObject;
+
+        public static Template _EditTemplate;
+
         [MenuItem("Window/Custom-UI/CustomUITemplate-Generator")]
         public static void ShowMenu()
         {
@@ -22,6 +25,11 @@ namespace com.editor.customuicreator
         private void OnEnable()
         {
             _templates = new List<Template>();
+            if(_EditTemplate == null)
+            {
+                _EditTemplate = new Template();
+            }
+            
         }
 
         private void OnGUI()
@@ -39,6 +47,7 @@ namespace com.editor.customuicreator
                 foreach (Template template in _templates)
                 {
                     GUILayout.Label(template._TemplateName, EditorStyles.boldLabel);
+
                     GUILayout.Space(5);
                     Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(template._TemplateImage);
                     if (texture != null)
@@ -55,7 +64,11 @@ namespace com.editor.customuicreator
                     }
                     if (GUILayout.Button("Edit"))
                     {
-
+                        InitializeCanvas();
+                        saveTemplate.LoadHierarchyFromJson(template._UIObjects);
+                        _EditTemplate = template;
+                        Debug.Log(_EditTemplate._TemplateName);
+                        EditTemplate.ShowMenu();
                     }
 
                     if (GUILayout.Button("Delete"))

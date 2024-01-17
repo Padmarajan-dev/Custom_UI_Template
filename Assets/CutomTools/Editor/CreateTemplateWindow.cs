@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System;
 using System.Linq;
+using TMPro;
 
 namespace com.editor.customuicreator
 {
@@ -136,11 +137,10 @@ namespace com.editor.customuicreator
                 {
                     if(newTemplate._UIObjects.Count > 0)
                     {
-                        Debug.Log("UI Object count: "+newTemplate._UIObjects.Count);
                         foreach (UIObject uIObject in newTemplate._UIObjects)
                         {
                             UIObject modifiedObject = uIObject;
-                            ShowUIElements(ref modifiedObject);
+                            ShowUIElements(ref modifiedObject,ref newTemplate);
                         }
                     }
                     else
@@ -206,7 +206,7 @@ namespace com.editor.customuicreator
         #region Common Methods
 
         //to select image from files
-        private void OpenImagePicker(ref Texture2D image)
+        public void OpenImagePicker(ref Texture2D image)
         {
             string imagePath = EditorUtility.OpenFilePanel("Select Image", "", "png,jpg,jpeg,gif");
             if (!string.IsNullOrEmpty(imagePath))
@@ -236,10 +236,11 @@ namespace com.editor.customuicreator
         }
 
         //to show different UI elements Added In Template
-        public void ShowUIElements(ref UIObject uiobject)
+        public void ShowUIElements(ref UIObject uiobject,ref Template template)
         {
             if (uiobject != null)
             {
+
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("GameObjectName", EditorStyles.boldLabel);
                 uiobject._ObjectName = EditorGUILayout.TextField("", uiobject._ObjectName);
@@ -261,15 +262,27 @@ namespace com.editor.customuicreator
 
                 GUILayout.EndHorizontal();
                 GUILayout.Label("Parent Object", EditorStyles.boldLabel);
-                uiobject._Parent = EditorGUILayout.ObjectField("My GameObject Field", uiobject._Parent, typeof(GameObject), true) as GameObject;
+
                 if (uiobject._Object)
                 {
+                    GameObject parent = null;
                     uiobject._Object.name = uiobject._ObjectName;
                     uiobject._Object.transform.localPosition = uiobject._ObjectPosition;
                     uiobject._Object.transform.localEulerAngles = uiobject._ObjectRotation;
                     uiobject._Object.transform.localScale = uiobject._ObjectScale;
-                    uiobject._Object.transform.parent = uiobject._Parent.transform;
+
+                    if (uiobject._ParentObjectName != null)
+                    {
+                        parent = CreateTemplateWindow.FindObject(uiobject._ParentObjectName);
+
+                        if (parent != null)
+                        {
+                            uiobject._Object.transform.parent = parent.transform;
+                        }
+                    }
+                    parent = EditorGUILayout.ObjectField("My GameObject Field", uiobject._Object.transform.parent, typeof(GameObject), true) as GameObject;
                 }
+
                 if (uiobject._Object)
                 {
                     if (uiobject._Object.GetComponent<Image>())
@@ -292,11 +305,35 @@ namespace com.editor.customuicreator
                             OpenImagePicker(ref uiobject._Image);
                         }
                     }
+                    if (uiobject._Object.GetComponent<TextMeshProUGUI>())
+                    {
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label("Text Color", EditorStyles.boldLabel);
+                        uiobject._TextColor = EditorGUILayout.ColorField(uiobject._TextColor);
+                        uiobject._Object.GetComponent<TextMeshProUGUI>().color = uiobject._TextColor;
+
+
+                        GUILayout.EndHorizontal();
+
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label("Text Size", EditorStyles.boldLabel);
+                        uiobject._TextSize = EditorGUILayout.FloatField(uiobject._TextSize);
+                        uiobject._Object.GetComponent<TextMeshProUGUI>().fontSize = uiobject._TextSize;
+                        GUILayout.EndHorizontal();
+
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label("Text", EditorStyles.boldLabel);
+                        uiobject._Text = EditorGUILayout.TextField(uiobject._Text);
+                        uiobject._Object.GetComponent<TextMeshProUGUI>().text = uiobject._Text;
+                        GUILayout.EndHorizontal();
+                    }
                 }
+
+                   
                 if (GUILayout.Button("Remove"))
                 {
                         GameObject obj = uiobject._Object;
-                        newTemplate._UIObjects.Remove(uiobject);
+                        template._UIObjects.Remove(uiobject);
                         DestroyImmediate(obj);
                 }
             }
@@ -304,7 +341,7 @@ namespace com.editor.customuicreator
         }
 
         //to load Texture
-        private Texture2D LoadTexture(string path)
+        public Texture2D LoadTexture(string path)
         {
             byte[] fileData = System.IO.File.ReadAllBytes(path);
             Texture2D texture = new Texture2D(2, 2);

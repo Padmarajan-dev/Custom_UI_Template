@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using TMPro;
 using Unity.Plastic.Newtonsoft.Json;
 using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEditor;
@@ -252,6 +253,35 @@ namespace com.editor.customuicreator
                     }
                 }
             }
+
+            if (data._ObjectType == "Text")
+            {
+
+                if (!string.IsNullOrEmpty(data._Text))
+                {
+                    TextMeshProUGUI textComponent = newObject.GetComponent<TextMeshProUGUI>();
+                    if (textComponent != null)
+                    {
+                        textComponent.text = data._Text;
+                        textComponent.color = data._TextColor;
+                        textComponent.fontSize = data._TextSize;
+                    }
+                    else
+                    {
+                        newObject.AddComponent<TextMeshProUGUI>();
+                        textComponent = newObject.GetComponent<TextMeshProUGUI>();
+                        textComponent.text = data._Text;
+                        textComponent.color = data._TextColor;
+                        textComponent.fontSize = data._TextSize;
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("Sprite not found at path: " + data._ImagePath);
+                }
+            
+            }
+
             if (data._ParentObjectName != null)
             {
                 GameObject parent = CreateTemplateWindow.FindObject(data._ParentObjectName);
@@ -287,8 +317,9 @@ namespace com.editor.customuicreator
         public Vector3 _ObjectRotation;
         [JsonIgnore] public Texture2D _Image;
         public string _ImagePath;
-        //public Color _ObjectColor;
-        //public Color _TextColor;
+        public Color _TextColor;
+        public float _TextSize;
+        public string _Text;
         [JsonIgnore] public GameObject _Parent;
         public string _ParentObjectName;
         public string _ObjectType;

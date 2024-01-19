@@ -16,6 +16,9 @@ namespace com.editor.customuicreator
 
         public static Template _EditTemplate;
 
+
+
+
         [MenuItem("Window/Custom-UI/CustomUITemplate-Generator")]
         public static void ShowMenu()
         {
@@ -29,11 +32,13 @@ namespace com.editor.customuicreator
             {
                 _EditTemplate = new Template();
             }
-            
+
+
         }
 
         private void OnGUI()
         {
+
             //to show List of Templates already been created
             SaveTemplate saveTemplate = new SaveTemplate();
 
@@ -67,7 +72,6 @@ namespace com.editor.customuicreator
                         InitializeCanvas();
                         saveTemplate.LoadHierarchyFromJson(template._UIObjects);
                         _EditTemplate = template;
-                        Debug.Log(_EditTemplate._TemplateName);
                         EditTemplate.ShowMenu();
                     }
 

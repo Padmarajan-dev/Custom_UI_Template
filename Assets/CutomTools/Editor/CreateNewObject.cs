@@ -181,38 +181,6 @@ namespace com.editor.customuicreator
             EditCreatedObjet();
 
         }
-        //Button Object
-        //private void ShowButtonGameObjectProps()
-        //{
-        //    if (m_CreatedGameobject != null)
-        //    {
-        //        CommonGameObjectProps();
-        //        if (m_CreatedGameobject.GetComponent<Button>() == null)
-        //        {
-        //            m_CreatedGameobject.AddComponent<Button>();
-        //        }
-        //        if (m_CreatedGameobject.GetComponent<Button>() != null)
-        //        {
-        //            GUILayout.BeginHorizontal();
-        //            GUILayout.Label("Button Color", EditorStyles.boldLabel);
-        //            ColorBlock colors = m_CreatedGameobject.GetComponent<Button>().colors;
-        //            m_ObjectColor = EditorGUILayout.ColorField(m_ObjectColor);
-        //            colors.highlightedColor = m_ObjectColor;
-        //            GUILayout.EndHorizontal();
-        //            GUILayout.BeginHorizontal();
-        //            GUILayout.Label("Button Text Color", EditorStyles.boldLabel);
-        //            m_ObjectTextColor = EditorGUILayout.ColorField(m_ObjectTextColor);
-        //            GUILayout.EndHorizontal();
-        //            GUILayout.Label("Button Text Size", EditorStyles.boldLabel);
-        //            m_TextSize = EditorGUILayout.FloatField(m_TextSize);
-        //            GUILayout.EndHorizontal();
-        //        }
-        //        Buttons();
-        //    }
-        //    EditCreatedObjet();
-
-        //}
-
         //text Object
         private void ShowTextGameObjectProps()
         {
@@ -394,7 +362,6 @@ namespace com.editor.customuicreator
             return texture;
         }
         #endregion
-
         #region event methods
 
         [System.Obsolete]

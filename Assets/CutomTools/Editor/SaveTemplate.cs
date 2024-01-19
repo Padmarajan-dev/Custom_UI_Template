@@ -17,6 +17,7 @@ namespace com.editor.customuicreator
     public class SaveTemplate
     {
 
+
         private string m_JsonDataPath = "Assets/Resources/Data";
         private GameObject rootGameObject;
 
@@ -36,6 +37,32 @@ namespace com.editor.customuicreator
 
         }
 
+        public void UpdateTemplateData(Template template)
+        {
+            string jsonFilePath = m_JsonDataPath + "/TemplatesData.json";
+            string jsonContent = File.ReadAllText(jsonFilePath);
+
+            // Deserialize the JSON string into a List of objects
+            List<Template> templateList = JsonConvert.DeserializeObject<List<Template>>(jsonContent,settings);
+            for(int i =0;i<templateList.Count;i++)
+            {
+                if (templateList[i]._TemplateId == template._TemplateId)
+                {
+
+                    templateList[i] = template;
+                }
+            }
+            string updatedJson = JsonConvert.SerializeObject(templateList,settings);
+
+            // Save the updated JSON string back to the file
+            File.WriteAllText(jsonFilePath, updatedJson);
+            Debug.Log("Updated SuccessFully");
+        }
+
+        public void AssignUpdatedTemp(Template currentemplate,Template UpdateTemplate)
+        {
+            currentemplate = UpdateTemplate;
+        }
 
         public List<Template> LoadTemplateData()
         {
@@ -211,14 +238,6 @@ namespace com.editor.customuicreator
         private GameObject CreateGameObject(UIObject data)
         {
             GameObject newObject = data._Object != null ? data._Object : new GameObject(data._ObjectName);
-
-            //if (data._Parent != null)
-            //{
-            //    newObject.transform.parent = data._Parent.transform;
-            //}
-
-
-
             newObject.transform.localPosition = data._ObjectPosition;
             newObject.transform.localEulerAngles = data._ObjectRotation;
             newObject.transform.localScale = data._ObjectScale;
@@ -290,6 +309,11 @@ namespace com.editor.customuicreator
                 {
                     newObject.transform.parent = parent.transform;
                 }
+                else
+                {
+
+                    newObject.transform.parent = EditTemplate._DefaultParent.transform;
+                }
             }
 
             return newObject;
@@ -301,9 +325,12 @@ namespace com.editor.customuicreator
     [System.Serializable]
     public class Template
     {
+        public string _TemplateId;
         public string _TemplateName;
         public string _TemplateImage;
         public List<UIObject> _UIObjects;
+
+        //public void SetnewTemplateImage(
     }
 
     [System.Serializable]
@@ -323,6 +350,25 @@ namespace com.editor.customuicreator
         [JsonIgnore] public GameObject _Parent;
         public string _ParentObjectName;
         public string _ObjectType;
+
+        public void SetNewParent(GameObject newParent)
+        {
+            if (newParent != null)
+            {
+                _Parent = newParent;
+            }
+
+        }
+
+        public void SetNewImage(Texture2D newImage)
+        {
+            if (newImage != null) 
+            {
+                _Image = newImage;
+            }
+        }
+
+
     }
 }
 

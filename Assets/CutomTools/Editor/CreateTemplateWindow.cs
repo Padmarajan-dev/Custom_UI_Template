@@ -8,12 +8,15 @@ using System.IO;
 using System;
 using System.Linq;
 using TMPro;
+using Random = UnityEngine.Random;
 
 namespace com.editor.customuicreator
 {
     public class CreateTemplateWindow : EditorWindow
     {
         private Texture2D selectedImage;
+
+        private Texture2D SelectedTemplateImage;
         private string selectedImagePath;
 
         private string m_TemplateName = string.Empty;
@@ -24,6 +27,10 @@ namespace com.editor.customuicreator
 
         SaveTemplate saveTemplate = new SaveTemplate();
         public static Template newTemplate;
+
+        private int m_TemplateId = 1;
+
+
 
         Vector2 scrollPosition = Vector2.zero;
         private void OnEnable()
@@ -41,6 +48,7 @@ namespace com.editor.customuicreator
             if(newTemplate._UIObjects == null)
             {
                 newTemplate._UIObjects = new List<UIObject>();
+
             }
         }
 
@@ -60,15 +68,15 @@ namespace com.editor.customuicreator
         {
             GUILayout.Label("Template Image",EditorStyles.boldLabel);
 
-            if (selectedImage != null)
+            if (SelectedTemplateImage != null)
             {
-                GUILayout.Label(selectedImage, GUILayout.Width(60), GUILayout.Height(60));
+                GUILayout.Label(SelectedTemplateImage, GUILayout.Width(60), GUILayout.Height(60));
 
             }
 
             if (GUILayout.Button("Select Image"))
             {
-                OpenImagePicker(ref selectedImage);
+                OpenImagePicker(ref SelectedTemplateImage, ref selectedImagePath);
             }
 
             //template name field
@@ -95,11 +103,13 @@ namespace com.editor.customuicreator
                 {
                     existingTemplate._TemplateName = m_TemplateName;
                     existingTemplate._TemplateImage = selectedImagePath;
+                    existingTemplate._TemplateId = Guid.NewGuid().ToString();
                 }
                 else
                 {
                     newTemplate._TemplateName = m_TemplateName;
                     newTemplate._TemplateImage = selectedImagePath;
+                    newTemplate._TemplateId = Guid.NewGuid().ToString();
                     if (m_Templates != null)
                     {
                         m_Templates.Add(newTemplate);
@@ -117,11 +127,14 @@ namespace com.editor.customuicreator
                 {
                     saveTemplate = new SaveTemplate();
                     saveTemplate.SaveTemplateData(m_Templates);
+                    m_TemplateId += 1;
                     m_TemplateName = string.Empty;
                     selectedImagePath = string.Empty;
                     selectedImage = null;
                     newTemplate = null;
+                    m_Templates = new List<Template>();
                     DestroyAllCanvasObjects();
+                    this.Close();
                     Repaint();
                 }
 
@@ -165,6 +178,10 @@ namespace com.editor.customuicreator
         }
         #endregion
 
+
+
+        #region Common Methods
+
         public static GameObject FindObject(string objName)
         {
             Transform[] roots = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects().Select(go => go.transform).ToArray();
@@ -202,11 +219,17 @@ namespace com.editor.customuicreator
 
             return null;
         }
+        public GameObject FindObjectByName(string objName) { 
 
-        #region Common Methods
-
+            GameObject obj = GameObject.Find(objName);
+            if(obj != null)
+            {
+                return obj;
+            }
+            return null;
+        }
         //to select image from files
-        public void OpenImagePicker(ref Texture2D image)
+        public void OpenImagePicker(ref Texture2D image,ref string imagepath)
         {
             string imagePath = EditorUtility.OpenFilePanel("Select Image", "", "png,jpg,jpeg,gif");
             if (!string.IsNullOrEmpty(imagePath))
@@ -223,8 +246,8 @@ namespace com.editor.customuicreator
                         FileUtil.CopyFileOrDirectory(imagePath, destinationPath);
                     }
                     AssetDatabase.Refresh();
-                    selectedImagePath = destinationPath;
-                    image = LoadTexture(selectedImagePath);
+                    imagepath = destinationPath;
+                    image = LoadTexture(imagepath);
                     Repaint();
                 }
                 catch (Exception e)
@@ -244,7 +267,6 @@ namespace com.editor.customuicreator
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("GameObjectName", EditorStyles.boldLabel);
                 uiobject._ObjectName = EditorGUILayout.TextField("", uiobject._ObjectName);
-
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("GameObjectPosition", EditorStyles.boldLabel);
@@ -261,56 +283,96 @@ namespace com.editor.customuicreator
                 uiobject._ObjectScale = EditorGUILayout.Vector3Field("", uiobject._ObjectScale);
 
                 GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                GameObject parent = FindObject(uiobject._ParentObjectName);
                 GUILayout.Label("Parent Object", EditorStyles.boldLabel);
+                parent = EditorGUILayout.ObjectField(parent, typeof(GameObject), true) as GameObject;
+                GUILayout.EndHorizontal();
 
-                if (uiobject._Object)
+                GameObject obj = FindObjectByName(uiobject._ObjectName);
+
+                if (obj)
                 {
-                    GameObject parent = null;
-                    uiobject._Object.name = uiobject._ObjectName;
-                    uiobject._Object.transform.localPosition = uiobject._ObjectPosition;
-                    uiobject._Object.transform.localEulerAngles = uiobject._ObjectRotation;
-                    uiobject._Object.transform.localScale = uiobject._ObjectScale;
+                    obj.name = uiobject._ObjectName;
+                    obj.transform.localPosition = uiobject._ObjectPosition;
+                    obj.transform.localEulerAngles = uiobject._ObjectRotation;
+                    obj.transform.localScale = uiobject._ObjectScale;
 
                     if (uiobject._ParentObjectName != null)
                     {
-                        parent = CreateTemplateWindow.FindObject(uiobject._ParentObjectName);
+
 
                         if (parent != null)
                         {
-                            uiobject._Object.transform.parent = parent.transform;
+  
+                            // Update the uiobject's parent only if a new parent is selected
+                            if (GUI.changed)
+                            {
+                                uiobject.SetNewParent(parent);
+                                uiobject._ParentObjectName = parent.transform.name;
+                                obj.transform.parent = parent.transform;
+                                // Assuming there is a method to set the new parent in your uiobject class
+                            }
                         }
+                        else
+                        {
+                            // If the specified parent doesn't exist, set the default parent to Canvas
+                            parent = FindObjectOfType<Canvas>().gameObject;
+     
+                            // Update the uiobject's parent
+                            uiobject.SetNewParent(parent);
+                            uiobject._ParentObjectName = parent.transform.name;
+                            obj.transform.parent = parent.transform;
+                        }
+      
                     }
-                    parent = EditorGUILayout.ObjectField("My GameObject Field", uiobject._Object.transform.parent, typeof(GameObject), true) as GameObject;
+
+                }
+                else
+                {
+                    Debug.Log("Could not find obj");
                 }
 
-                if (uiobject._Object)
+                if (obj)
                 {
-                    if (uiobject._Object.GetComponent<Image>())
+                    if (obj.GetComponent<Image>())
                     {
                         GUILayout.Label("Element Image", EditorStyles.boldLabel);
-                        if (uiobject._Image != null)
+
+                        // Load initial image if available
+                        if (uiobject._ImagePath != null && uiobject._ImagePath != "")
                         {
-                            GUILayout.Label(uiobject._Image, GUILayout.Width(60), GUILayout.Height(60));
-                            // Create a sprite from the loaded texture
-                            Sprite sprite = Sprite.Create(uiobject._Image, new Rect(0, 0, uiobject._Image.width, uiobject._Image.height), Vector2.one * 0.5f);
-                            if (uiobject._Object)
-                            {
-                                // Assign the sprite to the Image component
-                                uiobject._Object.GetComponent<Image>().sprite = sprite;
-                            }
+                            Texture2D initialImage = LoadTexture(uiobject._ImagePath);
+                            GUILayout.Label(initialImage, GUILayout.Width(60), GUILayout.Height(60));
+                            SetImage(obj, initialImage);
                         }
 
                         if (GUILayout.Button("Select Image"))
                         {
-                            OpenImagePicker(ref uiobject._Image);
+                            OpenImagePicker(ref uiobject._Image,ref selectedImagePath);
+                            SetImage(obj, uiobject._Image);
+                            //selectedImage = uiobject._Image;
+                            uiobject._ImagePath = selectedImagePath;
                         }
                     }
-                    if (uiobject._Object.GetComponent<TextMeshProUGUI>())
+
+                    // Function to set the Image component's sprite
+                    void SetImage(GameObject obj, Texture2D image)
+                    {
+                        if (image != null)
+                        {
+                            // Create a sprite from the loaded texture
+                            Sprite sprite = Sprite.Create(image, new Rect(0, 0, image.width, image.height), Vector2.one * 0.5f);
+                            // Assign the sprite to the Image component
+                            obj.GetComponent<Image>().sprite = sprite;
+                        }
+                    }
+                    if (obj.GetComponent<TextMeshProUGUI>())
                     {
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("Text Color", EditorStyles.boldLabel);
                         uiobject._TextColor = EditorGUILayout.ColorField(uiobject._TextColor);
-                        uiobject._Object.GetComponent<TextMeshProUGUI>().color = uiobject._TextColor;
+                        obj.GetComponent<TextMeshProUGUI>().color = uiobject._TextColor;
 
 
                         GUILayout.EndHorizontal();
@@ -318,13 +380,13 @@ namespace com.editor.customuicreator
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("Text Size", EditorStyles.boldLabel);
                         uiobject._TextSize = EditorGUILayout.FloatField(uiobject._TextSize);
-                        uiobject._Object.GetComponent<TextMeshProUGUI>().fontSize = uiobject._TextSize;
+                        obj.GetComponent<TextMeshProUGUI>().fontSize = uiobject._TextSize;
                         GUILayout.EndHorizontal();
 
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("Text", EditorStyles.boldLabel);
                         uiobject._Text = EditorGUILayout.TextField(uiobject._Text);
-                        uiobject._Object.GetComponent<TextMeshProUGUI>().text = uiobject._Text;
+                        obj.GetComponent<TextMeshProUGUI>().text = uiobject._Text;
                         GUILayout.EndHorizontal();
                     }
                 }
@@ -332,9 +394,9 @@ namespace com.editor.customuicreator
                    
                 if (GUILayout.Button("Remove"))
                 {
-                        GameObject obj = uiobject._Object;
+                        GameObject Currentobject = obj;
                         template._UIObjects.Remove(uiobject);
-                        DestroyImmediate(obj);
+                        DestroyImmediate(Currentobject);
                 }
             }
             
@@ -406,17 +468,6 @@ namespace com.editor.customuicreator
             }
         }
         #endregion
-
-
-
-        private void OnDestroy()
-        {
-            saveTemplate.SaveTemplateData(m_Templates);
-            DestroyAllCanvasObjects();
-        }
     }
-
-
-
 }
 
